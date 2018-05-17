@@ -1,21 +1,19 @@
 import React from 'react';
-import {IFieldProps} from '../types';
+import {IFieldInternalProps} from '../types';
 
-class Field extends React.Component<IFieldProps> {
+class Field extends React.Component<IFieldInternalProps> {
+    static defaultProps = {
+        value: '',
+        initialValue: ''
+    };
+
     public componentWillMount() {
-        console.log(this.props.register);
-        if (typeof this.props.register === 'function') {
-            this.props.register(this.props.name);
-        }
+        const {initialValue, name} = this.props;
+        this.props.register(name, initialValue);
     }
 
     public handleChange = (evt: React.FormEvent<HTMLInputElement>) => {
-        if (typeof this.props.changeFieldValue === 'function') {
-            this.props.changeFieldValue(
-                this.props.name,
-                evt.currentTarget.value
-            );
-        }
+        this.props.changeFieldValue(this.props.name, evt.currentTarget.value);
     };
 
     public render() {

@@ -9,9 +9,16 @@ import {
 import initialState from '../context/initial-state';
 
 class Form extends React.Component<IFormProps, IFormState> {
+    static defaultProps = {
+        onChange: () => {},
+        onSubmit: () => {},
+        onSubmitSuccess: () => {},
+        onSubmitFailure: () => {}
+    };
+
     public state = initialState;
 
-    public registerField = (name: string) => {
+    public registerField = (name: string, initialValue: any) => {
         if (this.state.values[name]) {
             throw new Error(
                 `Field has already been registered with name ${name} `
@@ -22,7 +29,7 @@ class Form extends React.Component<IFormProps, IFormState> {
             ({values}) => ({
                 values: {
                     ...values,
-                    [name]: {value: '', initialValue: ''}
+                    [name]: {value: initialValue, initialValue}
                 }
             }),
             () => console.log('REGISTERED', this.state)
@@ -35,8 +42,36 @@ class Form extends React.Component<IFormProps, IFormState> {
             ({values}) => ({
                 values: this.setFieldValue({name, key: 'value', value, values})
             }),
-            () => console.log('Changed', this.state)
+            () => this.handleChange()
         );
+    };
+
+    public handleChange = () => {
+        const {onChange} = this.props;
+
+        if (typeof onChange === 'function') {
+            onChange(this.state.values);
+        }
+    };
+
+    public handleSubmit = async (evt: React.FormEvent<HTMLFormElement>) => {
+        evt.preventDefault();
+
+        const {values} = this.state;
+        const {onSubmit, onSubmitSuccess, onSubmitFailure} = this.props;
+        try {
+            if (typeof onSubmit === 'function') {
+                const res = await onSubmit(values);
+            }
+
+            if (typeof onSubmitSuccess === 'function') {
+                onSubmitSuccess(values);
+            }
+        } catch (err) {
+            if (typeof onSubmitFailure === 'function') {
+                onSubmitFailure(err);
+            }
+        }
     };
 
     public render() {
@@ -48,7 +83,11 @@ class Form extends React.Component<IFormProps, IFormState> {
             changeFieldValue: this.changeFieldValue
         };
 
-        return <Provider value={value}>{children}</Provider>;
+        return (
+            <Provider value={value}>
+                <form onSubmit={this.handleSubmit}>{children}</form>
+            </Provider>
+        );
     }
 
     private setFieldValue({
@@ -63,11 +102,6 @@ class Form extends React.Component<IFormProps, IFormState> {
         key: string;
     }) {
         const current = values[name];
-
-        console.log({
-            ...values,
-            [name]: {...current, [key]: value}
-        });
 
         return {
             ...values,

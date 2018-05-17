@@ -16,18 +16,25 @@ export interface IFormProps extends IProviderFormProps {
 }
 
 export interface IProviderFormProps {
+    onSubmitSuccess?(values: IFormValueObject): void;
+    onSubmitFailure?(error: Error): void;
+    onSubmit?(values: IFormValueObject): void;
     onChange?(values: IFormValueObject): void;
     children: any;
 }
 
 export interface IFormConsumer extends IFormState {
-    registerField?(name: string): void;
-    changeFieldValue?(name: string, value: any): void;
+    registerField(name: string, initialValue?: any): void;
+    changeFieldValue(name: string, value: any): void;
+}
+
+export interface IFieldInternalProps extends IFieldProps {
+    register(name: string, initalValue?: any): void;
+    changeFieldValue(name: string, value: any): void;
 }
 
 export interface IFieldProps {
-    register?(name: string): void;
-    changeFieldValue?(name: string, value: any): void;
     value?: any;
+    initialValue?: any;
     name: string;
 }
