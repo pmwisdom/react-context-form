@@ -1,27 +1,55 @@
 import React from 'react';
-import {IFieldInternalProps} from '../types';
+import {IFieldInternalProps, IFieldChildrenProps} from '../types';
+import {isFunction} from '../util/func';
 
 class Field extends React.Component<IFieldInternalProps> {
     static defaultProps = {
         value: '',
-        initialValue: ''
+        initialValue: '',
+        type: 'text',
+        validators: []
     };
 
     public componentWillMount() {
-        const {initialValue, name} = this.props;
-        this.props.register(name, initialValue);
+        const {initialValue, name, validators} = this.props;
+        this.props.register({name, initialValue, validators});
     }
 
-    public handleChange = (evt: React.FormEvent<HTMLInputElement>) => {
-        this.props.changeFieldValue(this.props.name, evt.currentTarget.value);
+    public handleChange = (
+        evtOrValue: React.FormEvent<HTMLInputElement> | any
+    ) => {
+        const {changeFieldValue, name} = this.props;
+
+        if (evtOrValue.currentTarget) {
+            return changeFieldValue(name, evtOrValue.currentTarget.value);
+        }
+
+        changeFieldValue(name, evtOrValue);
     };
 
+    public handleBlur = () => {};
+
+    public handleFocus = () => {};
+
     public render() {
-        const {value: fieldValue} = this.props;
+        const {value, error, type, children, touched} = this.props;
 
-        const value = fieldValue && fieldValue.value;
+        if (isFunction(children)) {
+            return children({value, onChange: this.handleChange});
+        }
 
-        return <input value={value} onChange={this.handleChange} />;
+        return (
+            <span>
+                <input
+                    value={value}
+                    type={type}
+                    onChange={this.handleChange}
+                    onBlur={this.handleBlur}
+                    onFocus={this.handleFocus}
+                />
+                {touched && <div>{error}</div>}
+            </span>
+        );
     }
 }
 

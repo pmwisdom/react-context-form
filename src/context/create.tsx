@@ -22,15 +22,17 @@ const createForm = () => {
     const ConsumerField = (props: IFieldProps) => {
         return (
             <Consumer>
-                {(consumerProps: IFormConsumer) => (
-                    <Field
-                        {...consumerProps}
-                        {...props}
-                        register={consumerProps.registerField}
-                        name={props.name}
-                        value={consumerProps.values[props.name]}
-                    />
-                )}
+                {(consumerProps: IFormConsumer) => {
+                    return (
+                        <Field
+                            {...consumerProps}
+                            {...props}
+                            {...consumerProps.values[props.name]}
+                            register={consumerProps.registerField}
+                            name={props.name}
+                        />
+                    );
+                }}
             </Consumer>
         );
     };

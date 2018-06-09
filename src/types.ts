@@ -1,6 +1,9 @@
 export interface IFormValue {
     value: any;
     initialValue: any;
+    touched: boolean;
+    error?: string;
+    validators?: {(value: any): string | undefined}[];
 }
 
 export interface IFormValueObject {
@@ -24,17 +27,43 @@ export interface IProviderFormProps {
 }
 
 export interface IFormConsumer extends IFormState {
-    registerField(name: string, initialValue?: any): void;
+    registerField({
+        name,
+        initialValue,
+        validators
+    }: {
+        name: string;
+        initialValue?: any;
+        validators?: {(value: any): string | undefined}[];
+    }): void;
     changeFieldValue(name: string, value: any): void;
 }
 
 export interface IFieldInternalProps extends IFieldProps {
-    register(name: string, initalValue?: any): void;
+    register({
+        name,
+        initialValue,
+        validators
+    }: {
+        name: string;
+        initialValue?: any;
+        validators?: {(value: any): string | undefined}[];
+    }): void;
     changeFieldValue(name: string, value: any): void;
+}
+
+export interface IFieldChildrenProps {
+    value?: any;
+    onChange?(evtOrValue?: React.FormEvent<HTMLInputElement> | any): void;
 }
 
 export interface IFieldProps {
     value?: any;
     initialValue?: any;
     name: string;
+    type?: string;
+    error?: string;
+    touched?: boolean;
+    validators?: {(value: any): string | undefined}[];
+    children?(props: IFieldChildrenProps): any;
 }

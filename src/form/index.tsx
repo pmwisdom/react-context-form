@@ -7,6 +7,7 @@ import {
     IFormValueObject
 } from '../types';
 import initialState from '../context/initial-state';
+import {isFunction} from '../util/func';
 
 class Form extends React.Component<IFormProps, IFormState> {
     static defaultProps = {
@@ -18,7 +19,15 @@ class Form extends React.Component<IFormProps, IFormState> {
 
     public state = initialState;
 
-    public registerField = (name: string, initialValue: any) => {
+    public registerField = ({
+        name,
+        initialValue,
+        validators
+    }: {
+        name: string;
+        initialValue: any;
+        validators: any;
+    }) => {
         if (this.state.values[name]) {
             throw new Error(
                 `Field has already been registered with name ${name} `
@@ -29,7 +38,12 @@ class Form extends React.Component<IFormProps, IFormState> {
             ({values}) => ({
                 values: {
                     ...values,
-                    [name]: {value: initialValue, initialValue}
+                    [name]: {
+                        value: initialValue,
+                        initialValue,
+                        touched: false,
+                        validators
+                    }
                 }
             }),
             () => console.log('REGISTERED', this.state)
@@ -39,8 +53,13 @@ class Form extends React.Component<IFormProps, IFormState> {
     public changeFieldValue = (name: string, value: any) => {
         console.log('Value', value);
         this.setState(
-            ({values}) => ({
-                values: this.setFieldValue({name, key: 'value', value, values})
+            () => ({
+                values: this.setFieldValue({
+                    name,
+                    key: 'value',
+                    value,
+                    touched: true
+                })
             }),
             () => this.handleChange()
         );
@@ -49,7 +68,7 @@ class Form extends React.Component<IFormProps, IFormState> {
     public handleChange = () => {
         const {onChange} = this.props;
 
-        if (typeof onChange === 'function') {
+        if (isFunction(onChange)) {
             onChange(this.state.values);
         }
     };
@@ -60,18 +79,67 @@ class Form extends React.Component<IFormProps, IFormState> {
         const {values} = this.state;
         const {onSubmit, onSubmitSuccess, onSubmitFailure} = this.props;
         try {
-            if (typeof onSubmit === 'function') {
+            if (isFunction(onSubmit)) {
+                const hasError = this.runValidation();
+
+                console.log('had error?', hasError);
+
+                if (hasError) {
+                    throw new Error('Validation Error');
+                }
+
                 const res = await onSubmit(values);
             }
 
-            if (typeof onSubmitSuccess === 'function') {
+            if (isFunction(onSubmitSuccess)) {
                 onSubmitSuccess(values);
             }
         } catch (err) {
-            if (typeof onSubmitFailure === 'function') {
+            if (isFunction(onSubmitFailure)) {
                 onSubmitFailure(err);
             }
         }
+    };
+
+    public runValidation() {
+        const {values} = this.state;
+        let hasError = false;
+
+        Object.keys(values).map(key => {
+            const field = values[key];
+
+            if (field.validators && field.validators.length) {
+                for (let i = 0; i < field.validators.length; i++) {
+                    const validator = field.validators[i];
+
+                    const error = validator(field.value);
+
+                    if (error) {
+                        hasError = true;
+                    }
+
+                    this.updateFieldError({name: key, error});
+                }
+            }
+        });
+
+        return hasError;
+    }
+
+    public updateFieldError = ({
+        name,
+        error
+    }: {
+        name: any;
+        error: string | undefined;
+    }) => {
+        this.setState(() => ({
+            values: this.setFieldValue({
+                name,
+                value: error,
+                key: 'error'
+            })
+        }));
     };
 
     public render() {
@@ -90,24 +158,31 @@ class Form extends React.Component<IFormProps, IFormState> {
         );
     }
 
-    private setFieldValue({
+    private setFieldValue = ({
         name,
         value,
-        values,
-        key
+        key,
+        touched
     }: {
         name: string;
         value: any;
-        values: IFormValueObject;
         key: string;
-    }) {
+        touched?: boolean;
+    }) => {
+        const {values} = this.state;
         const current = values[name];
+
+        const newValue = {...current, [key]: value};
+
+        if (touched) {
+            newValue.touched = touched;
+        }
 
         return {
             ...values,
-            [name]: {...current, [key]: value}
+            [name]: newValue
         };
-    }
+    };
 }
 
 export default Form;
