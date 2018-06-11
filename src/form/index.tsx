@@ -183,22 +183,44 @@ class Form extends React.Component<IFormProps, IFormState> {
 		});
 	};
 
-	public render() {
-		const {provider: Provider, children} = this.props;
+	public reset = async () => {
+		const updates = [];
+		const {values} = this.state;
 
-		const value: IFormConsumer = {
-			...this.state,
-			registerField: this.registerField,
-			changeFieldValue: this.changeFieldValue,
-			onBlur: this.handleBlur
-		};
+		for (const name of Object.keys(values)) {
+			const val = values[name];
 
-		return (
-			<Provider value={value}>
-				<form onSubmit={this.handleSubmit}>{children}</form>
-			</Provider>
-		);
-	}
+			updates.push(
+				this.setFieldValue({
+					name,
+					key: 'value',
+					value: val.initialValue,
+					touched: false
+				})
+			);
+		}
+
+		await Promise.all(updates);
+	};
+
+	public setFormValues = async (values: {[key: string]: any}) => {
+		const updates = [];
+
+		for (const name of Object.keys(values)) {
+			const value = values[name];
+
+			updates.push(
+				this.setFieldValue({
+					name,
+					key: 'value',
+					value,
+					touched: false
+				})
+			);
+		}
+
+		await Promise.all(updates);
+	};
 
 	public setFieldValue = ({
 		name,
@@ -214,14 +236,11 @@ class Form extends React.Component<IFormProps, IFormState> {
 		return new Promise(resolve => {
 			this.setState(({values}) => {
 				const current = values[name];
-
 				const newValue = {...current, [key]: value};
 
 				if (touched) {
 					newValue.touched = touched;
 				}
-
-				console.log('Current', current, 'New', newValue);
 
 				return {
 					values: {
@@ -232,6 +251,25 @@ class Form extends React.Component<IFormProps, IFormState> {
 			}, resolve);
 		});
 	};
+
+	public render() {
+		const {provider: Provider, children} = this.props;
+
+		const value: IFormConsumer = {
+			...this.state,
+			registerField: this.registerField,
+			changeFieldValue: this.changeFieldValue,
+			onBlur: this.handleBlur,
+			reset: this.reset,
+			setFormValues: this.setFormValues
+		};
+
+		return (
+			<Provider value={value}>
+				<form onSubmit={this.handleSubmit}>{children}</form>
+			</Provider>
+		);
+	}
 }
 
 export default Form;

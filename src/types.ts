@@ -23,6 +23,7 @@ export interface IProviderFormProps {
 	onSubmitFailure?(error: Error): void;
 	onSubmit?(values: IFormValueObject): void;
 	onChange?(values: IFormValueObject): void;
+	ref?(node: any): void;
 	children: any;
 }
 
@@ -38,6 +39,8 @@ export interface IFormConsumer extends IFormState {
 	}): void;
 	changeFieldValue(name: string, value: any): void;
 	onBlur(): void;
+	reset(): void;
+	setFormValues(values: {[key: string]: any}): void;
 }
 
 export interface IFieldInternalProps extends IFieldProps {

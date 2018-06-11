@@ -8,7 +8,9 @@ const initialState: IFormConsumer = {
 	changeFieldValue: (name, value) => {
 		return {name, value};
 	},
-	onBlur: () => null
+	onBlur: () => null,
+	setFormValues: (values: any) => values,
+	reset: () => null
 };
 
 export default initialState;
