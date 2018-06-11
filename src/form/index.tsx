@@ -1,239 +1,231 @@
 import React from 'react';
 import {
-    IFormState,
-    IFormProps,
-    IFormConsumer,
-    IFormValue,
-    IFormValueObject
+	IFormState,
+	IFormProps,
+	IFormConsumer,
+	IFormValue,
+	IFormValueObject
 } from '../types';
 import initialState from '../context/initial-state';
 import {isFunction} from '../util/func';
 
 export interface IFieldRegister {
-    name: string;
-    initialValue: any;
-    validators: any;
+	name: string;
+	initialValue: any;
+	validators: any;
 }
 
 class Form extends React.Component<IFormProps, IFormState> {
-    static defaultProps = {
-        onChange: () => {},
-        onSubmit: () => {},
-        onSubmitSuccess: () => {},
-        onSubmitFailure: () => {}
-    };
+	static defaultProps = {
+		onChange: () => {},
+		onSubmit: () => {},
+		onSubmitSuccess: () => {},
+		onSubmitFailure: () => {}
+	};
 
-    public state = initialState;
-    public queue: IFieldRegister[] = [];
-    public isProcessingQueue: boolean = false;
+	public state = initialState;
+	public queue: IFieldRegister[] = [];
+	public isProcessingQueue: boolean = false;
 
-    public componentDidUpdate() {
-        console.info('[Form Updated]: ', this.state);
-    }
+	public componentDidUpdate() {
+		console.info('[Form Updated]: ', this.state);
+	}
 
-    public processQueueFields = () => {
-        const field: IFieldRegister | undefined = this.queue.shift();
+	public processQueueFields = () => {
+		const field: IFieldRegister | undefined = this.queue.shift();
 
-        if (!field) {
-            this.isProcessingQueue = false;
-            return;
-        }
+		if (!field) {
+			this.isProcessingQueue = false;
+			return;
+		}
 
-        const {name, initialValue, validators} = field;
+		const {name, initialValue, validators} = field;
 
-        if (this.state.values[name]) {
-            throw new Error(
-                `Form Field has already been registered with name ${name}`
-            );
-        }
+		if (this.state.values[name]) {
+			throw new Error(
+				`Form Field has already been registered with name ${name}`
+			);
+		}
 
-        this.setState(
-            ({values}) => ({
-                values: {
-                    ...values,
-                    [name]: {
-                        value: initialValue,
-                        initialValue,
-                        touched: false,
-                        validators
-                    }
-                }
-            }),
-            () => {
-                this.processQueueFields();
-            }
-        );
-    };
+		this.setState(
+			({values}) => ({
+				values: {
+					...values,
+					[name]: {
+						value: initialValue,
+						initialValue,
+						touched: false,
+						validators
+					}
+				}
+			}),
+			() => {
+				this.processQueueFields();
+			}
+		);
+	};
 
-    public registerField = (values: IFieldRegister) => {
-        this.queue.push(values);
+	public registerField = (values: IFieldRegister) => {
+		this.queue.push(values);
 
-        if (!this.isProcessingQueue) {
-            this.isProcessingQueue = true;
-            this.processQueueFields();
-        }
-    };
+		if (!this.isProcessingQueue) {
+			this.isProcessingQueue = true;
+			this.processQueueFields();
+		}
+	};
 
-    public changeFieldValue = (name: string, value: any) => {
-        this.setState(
-            ({values}) => ({
-                values: this.setFieldValue({
-                    values,
-                    name,
-                    key: 'value',
-                    value,
-                    touched: true
-                })
-            }),
-            () => this.handleChange()
-        );
-    };
+	public changeFieldValue = async (name: string, value: any) => {
+		await this.setFieldValue({
+			name,
+			key: 'value',
+			value,
+			touched: true
+		});
 
-    public handleChange = () => {
-        const {onChange} = this.props;
+		this.handleChange();
+	};
 
-        if (isFunction(onChange)) {
-            onChange(this.state.values);
-        }
-    };
+	public handleChange = () => {
+		const {onChange} = this.props;
 
-    public handleSubmit = async (evt: React.FormEvent<HTMLFormElement>) => {
-        evt.preventDefault();
+		if (isFunction(onChange)) {
+			onChange(this.state.values);
+		}
+	};
 
-        const {values} = this.state;
-        const {onSubmit, onSubmitSuccess, onSubmitFailure} = this.props;
-        try {
-            if (isFunction(onSubmit)) {
-                const hasError = await this.runValidation();
+	public handleSubmit = async (evt: React.FormEvent<HTMLFormElement>) => {
+		evt.preventDefault();
 
-                if (hasError) {
-                    throw new Error(
-                        '[Validation Error]' + JSON.stringify(this.fieldErrors)
-                    );
-                }
+		const {values} = this.state;
+		const {onSubmit, onSubmitSuccess, onSubmitFailure} = this.props;
+		try {
+			if (isFunction(onSubmit)) {
+				const errors = await this.runValidation();
 
-                const res = await onSubmit(values);
-            }
+				if (Boolean(Object.keys(errors))) {
+					throw new Error(
+						'[Validation Error]' + JSON.stringify(this.fieldErrors)
+					);
+				}
 
-            if (isFunction(onSubmitSuccess)) {
-                onSubmitSuccess(values);
-            }
-        } catch (err) {
-            if (isFunction(onSubmitFailure)) {
-                onSubmitFailure(err);
-            }
-        }
-    };
+				const res = await onSubmit(values);
+			}
 
-    public get fieldErrors() {
-        const {values} = this.state;
-        return Object.keys(values).reduce(
-            (acc: {[key: string]: string}, key: string) => {
-                const error = values[key].error;
+			if (isFunction(onSubmitSuccess)) {
+				onSubmitSuccess(values);
+			}
+		} catch (err) {
+			if (isFunction(onSubmitFailure)) {
+				onSubmitFailure(err);
+			}
+		}
+	};
 
-                return error ? {...acc, [key]: error} : acc;
-            },
-            {}
-        );
-    }
+	public get fieldErrors() {
+		const {values} = this.state;
+		return Object.keys(values).reduce(
+			(acc: {[key: string]: string}, key: string) => {
+				const error = values[key].error;
 
-    public async runValidation() {
-        const {values} = this.state;
-        let hasError = false;
-        const updates = [];
+				return error ? {...acc, [key]: error} : acc;
+			},
+			{}
+		);
+	}
 
-        for (const key of Object.keys(values)) {
-            const field = values[key];
-            if (field.validators && field.validators.length) {
-                let fieldError = undefined;
+	public async runValidation() {
+		const {values} = this.state;
+		const updates = [];
 
-                for (let i = 0; i < field.validators.length; i++) {
-                    const validator = field.validators[i];
+		for (const key of Object.keys(values)) {
+			const field = values[key];
+			if (field.validators && field.validators.length) {
+				let fieldError = undefined;
 
-                    fieldError = validator(field.value);
+				for (let i = 0; i < field.validators.length; i++) {
+					const validator = field.validators[i];
 
-                    if (fieldError) {
-                        hasError = true;
-                        break;
-                    }
-                }
+					fieldError = validator(field.value);
 
-                updates.push(
-                    this.updateFieldError({name: key, error: fieldError})
-                );
-            }
-        }
+					if (fieldError) {
+						break;
+					}
+				}
 
-        await Promise.all(updates);
+				updates.push(
+					this.updateFieldError({name: key, error: fieldError})
+				);
+			}
+		}
 
-        return hasError;
-    }
+		await Promise.all(updates);
 
-    public updateFieldError = ({
-        name,
-        error
-    }: {
-        name: any;
-        error: string | undefined;
-    }) => {
-        return new Promise(resolve =>
-            this.setState(
-                ({values}) => ({
-                    values: this.setFieldValue({
-                        values,
-                        name,
-                        value: error,
-                        key: 'error',
-                        touched: true
-                    })
-                }),
-                resolve
-            )
-        );
-    };
+		return this.fieldErrors;
+	}
 
-    public render() {
-        const {provider: Provider, children} = this.props;
+	public updateFieldError = ({
+		name,
+		error
+	}: {
+		name: any;
+		error: string | undefined;
+	}) => {
+		return this.setFieldValue({
+			name,
+			value: error,
+			key: 'error',
+			touched: true
+		});
+	};
 
-        const value: IFormConsumer = {
-            ...this.state,
-            registerField: this.registerField,
-            changeFieldValue: this.changeFieldValue
-        };
+	public render() {
+		const {provider: Provider, children} = this.props;
 
-        return (
-            <Provider value={value}>
-                <form onSubmit={this.handleSubmit}>{children}</form>
-            </Provider>
-        );
-    }
+		const value: IFormConsumer = {
+			...this.state,
+			registerField: this.registerField,
+			changeFieldValue: this.changeFieldValue
+		};
 
-    private setFieldValue = ({
-        values,
-        name,
-        value,
-        key,
-        touched
-    }: {
-        values: any;
-        name: string;
-        value: any;
-        key: string;
-        touched?: boolean;
-    }) => {
-        const current = values[name];
+		return (
+			<Provider value={value}>
+				<form onSubmit={this.handleSubmit}>{children}</form>
+			</Provider>
+		);
+	}
 
-        const newValue = {...current, [key]: value};
+	public setFieldValue = ({
+		name,
+		value,
+		key,
+		touched
+	}: {
+		name: string;
+		value: any;
+		key: string;
+		touched?: boolean;
+	}) => {
+		return new Promise(resolve => {
+			this.setState(({values}) => {
+				const current = values[name];
 
-        if (touched) {
-            newValue.touched = touched;
-        }
+				const newValue = {...current, [key]: value};
 
-        return {
-            ...values,
-            [name]: newValue
-        };
-    };
+				if (touched) {
+					newValue.touched = touched;
+				}
+
+				console.log('Current', current, 'New', newValue);
+
+				return {
+					values: {
+						...values,
+						[name]: newValue
+					}
+				};
+			}, resolve);
+		});
+	};
 }
 
 export default Form;
