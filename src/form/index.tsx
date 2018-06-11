@@ -101,8 +101,9 @@ class Form extends React.Component<IFormProps, IFormState> {
 		try {
 			if (isFunction(onSubmit)) {
 				const errors = await this.runValidation();
+				const hasError = Boolean(Object.keys(errors).length);
 
-				if (Boolean(Object.keys(errors))) {
+				if (hasError) {
 					throw new Error(
 						'[Validation Error]' + JSON.stringify(this.fieldErrors)
 					);
@@ -119,6 +120,10 @@ class Form extends React.Component<IFormProps, IFormState> {
 				onSubmitFailure(err);
 			}
 		}
+	};
+
+	public handleBlur = () => {
+		this.runValidation();
 	};
 
 	public get fieldErrors() {
@@ -184,7 +189,8 @@ class Form extends React.Component<IFormProps, IFormState> {
 		const value: IFormConsumer = {
 			...this.state,
 			registerField: this.registerField,
-			changeFieldValue: this.changeFieldValue
+			changeFieldValue: this.changeFieldValue,
+			onBlur: this.handleBlur
 		};
 
 		return (
