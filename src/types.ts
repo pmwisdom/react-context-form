@@ -53,7 +53,10 @@ export interface IFieldInternalProps extends IFieldProps {
 }
 
 export interface IFieldChildrenProps {
+    touched?: boolean;
+    error?: string;
     value?: any;
+    type?: any;
     onChange?(evtOrValue?: React.FormEvent<HTMLInputElement> | any): void;
 }
 

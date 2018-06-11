@@ -9,6 +9,12 @@ import {
 import initialState from '../context/initial-state';
 import {isFunction} from '../util/func';
 
+export interface IFieldRegister {
+    name: string;
+    initialValue: any;
+    validators: any;
+}
+
 class Form extends React.Component<IFormProps, IFormState> {
     static defaultProps = {
         onChange: () => {},
@@ -18,19 +24,26 @@ class Form extends React.Component<IFormProps, IFormState> {
     };
 
     public state = initialState;
+    public queue: IFieldRegister[] = [];
+    public isProcessingQueue: boolean = false;
 
-    public registerField = ({
-        name,
-        initialValue,
-        validators
-    }: {
-        name: string;
-        initialValue: any;
-        validators: any;
-    }) => {
+    public componentDidUpdate() {
+        console.info('[Form Updated]: ', this.state);
+    }
+
+    public processQueueFields = () => {
+        const field: IFieldRegister | undefined = this.queue.shift();
+
+        if (!field) {
+            this.isProcessingQueue = false;
+            return;
+        }
+
+        const {name, initialValue, validators} = field;
+
         if (this.state.values[name]) {
             throw new Error(
-                `Field has already been registered with name ${name} `
+                `Form Field has already been registered with name ${name}`
             );
         }
 
@@ -46,15 +59,26 @@ class Form extends React.Component<IFormProps, IFormState> {
                     }
                 }
             }),
-            () => console.log('REGISTERED', this.state)
+            () => {
+                this.processQueueFields();
+            }
         );
     };
 
+    public registerField = (values: IFieldRegister) => {
+        this.queue.push(values);
+
+        if (!this.isProcessingQueue) {
+            this.isProcessingQueue = true;
+            this.processQueueFields();
+        }
+    };
+
     public changeFieldValue = (name: string, value: any) => {
-        console.log('Value', value);
         this.setState(
-            () => ({
+            ({values}) => ({
                 values: this.setFieldValue({
+                    values,
                     name,
                     key: 'value',
                     value,
@@ -80,12 +104,12 @@ class Form extends React.Component<IFormProps, IFormState> {
         const {onSubmit, onSubmitSuccess, onSubmitFailure} = this.props;
         try {
             if (isFunction(onSubmit)) {
-                const hasError = this.runValidation();
-
-                console.log('had error?', hasError);
+                const hasError = await this.runValidation();
 
                 if (hasError) {
-                    throw new Error('Validation Error');
+                    throw new Error(
+                        '[Validation Error]' + JSON.stringify(this.fieldErrors)
+                    );
                 }
 
                 const res = await onSubmit(values);
@@ -101,27 +125,46 @@ class Form extends React.Component<IFormProps, IFormState> {
         }
     };
 
-    public runValidation() {
+    public get fieldErrors() {
+        const {values} = this.state;
+        return Object.keys(values).reduce(
+            (acc: {[key: string]: string}, key: string) => {
+                const error = values[key].error;
+
+                return error ? {...acc, [key]: error} : acc;
+            },
+            {}
+        );
+    }
+
+    public async runValidation() {
         const {values} = this.state;
         let hasError = false;
+        const updates = [];
 
-        Object.keys(values).map(key => {
+        for (const key of Object.keys(values)) {
             const field = values[key];
-
             if (field.validators && field.validators.length) {
+                let fieldError = undefined;
+
                 for (let i = 0; i < field.validators.length; i++) {
                     const validator = field.validators[i];
 
-                    const error = validator(field.value);
+                    fieldError = validator(field.value);
 
-                    if (error) {
+                    if (fieldError) {
                         hasError = true;
+                        break;
                     }
-
-                    this.updateFieldError({name: key, error});
                 }
+
+                updates.push(
+                    this.updateFieldError({name: key, error: fieldError})
+                );
             }
-        });
+        }
+
+        await Promise.all(updates);
 
         return hasError;
     }
@@ -133,13 +176,20 @@ class Form extends React.Component<IFormProps, IFormState> {
         name: any;
         error: string | undefined;
     }) => {
-        this.setState(() => ({
-            values: this.setFieldValue({
-                name,
-                value: error,
-                key: 'error'
-            })
-        }));
+        return new Promise(resolve =>
+            this.setState(
+                ({values}) => ({
+                    values: this.setFieldValue({
+                        values,
+                        name,
+                        value: error,
+                        key: 'error',
+                        touched: true
+                    })
+                }),
+                resolve
+            )
+        );
     };
 
     public render() {
@@ -159,17 +209,18 @@ class Form extends React.Component<IFormProps, IFormState> {
     }
 
     private setFieldValue = ({
+        values,
         name,
         value,
         key,
         touched
     }: {
+        values: any;
         name: string;
         value: any;
         key: string;
         touched?: boolean;
     }) => {
-        const {values} = this.state;
         const current = values[name];
 
         const newValue = {...current, [key]: value};

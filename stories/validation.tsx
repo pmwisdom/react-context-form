@@ -6,6 +6,21 @@ const {Form, Field} = createForm();
 
 const required = (value: any) => (!value ? 'This is required' : undefined);
 
+const minLength = (value: any) =>
+    value.length < 5 ? 'Value must be longer than 5 characters' : undefined;
+
+const InputWithError: React.SFC<any> = ({error, touched, ...rest}) => {
+    console.log('Error', error, touched);
+    return (
+        <div>
+            <input {...rest} />
+            {touched && error ? (
+                <div style={{color: 'red'}}>{error}</div>
+            ) : null}
+        </div>
+    );
+};
+
 storiesOf('Validation', module).add('validation', () => (
     <Form
         onChange={values => console.log('Values changed', values)}
@@ -17,12 +32,14 @@ storiesOf('Validation', module).add('validation', () => (
         }
         onSubmitFailure={err => console.error('Submit failed because', err)}
     >
-        <Field name="hello" validators={[required]} initialValue={'hello1'} />
-        <Field name="password" type="password" initialValue={'hello2'} />
-        <Field name="controlled" initialValue={'hello2'}>
-            {({value, onChange}) => {
-                return <input value={value} onChange={onChange} />;
-            }}
+        <Field name="validation" validators={[required]}>
+            {InputWithError}
+        </Field>
+        <Field name="validation-password" validators={[minLength]}>
+            {InputWithError}
+        </Field>
+        <Field name="multiple-validators" validators={[required, minLength]}>
+            {InputWithError}
         </Field>
         <button type="submit"> Submit </button>
     </Form>

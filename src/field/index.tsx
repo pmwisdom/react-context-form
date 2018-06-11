@@ -35,20 +35,23 @@ class Field extends React.Component<IFieldInternalProps> {
         const {value, error, type, children, touched} = this.props;
 
         if (isFunction(children)) {
-            return children({value, onChange: this.handleChange});
+            return children({
+                value,
+                onChange: this.handleChange,
+                error,
+                type,
+                touched
+            });
         }
 
         return (
-            <span>
-                <input
-                    value={value}
-                    type={type}
-                    onChange={this.handleChange}
-                    onBlur={this.handleBlur}
-                    onFocus={this.handleFocus}
-                />
-                {touched && <div>{error}</div>}
-            </span>
+            <input
+                value={value}
+                type={type}
+                onChange={this.handleChange}
+                onBlur={this.handleBlur}
+                onFocus={this.handleFocus}
+            />
         );
     }
 }

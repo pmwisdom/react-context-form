@@ -1,5 +1,5 @@
 Arguments: 
-  C:\Program Files\nodejs\node.exe C:\Users\pmwis\AppData\Roaming\npm\node_modules\yarn\bin\yarn.js start
+  C:\Program Files\nodejs\node.exe C:\Users\pmwis\AppData\Roaming\npm\node_modules\yarn\bin\yarn.js storyu
 
 PATH: 
   C:\ProgramData\Oracle\Java\javapath;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files (x86)\Razer Chroma SDK\bin;C:\Program Files\Razer Chroma SDK\bin;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\system32\config\systemprofile\AppData\Local\Microsoft\WindowsApps;C:\Program Files (x86)\GtkSharp\2.12\bin;C:\Program Files\erl9.0\bin;C:\Program Files (x86)\Elixir\bin;C:\WINDOWS\system32\config\systemprofile\.mix\escripts;C:\Program Files\Git\cmd;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\bin;C:\Program Files (x86)\Gpg4win\..\GnuPG\bin;C:\Python27;C:\Program Files\MongoDB\Server\3.4\bin;C:\Program Files (x86)\Windows Kits\8.1\Windows Performance Toolkit\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\Program Files\nodejs\;C:\WINDOWS\System32\OpenSSH\;C:\Users\pmwis\AppData\Local\Microsoft\WindowsApps;C:\Users\pmwis\AppData\Local\atom\bin;C:\Program Files\Heroku\bin;C:\Program Files\MongoDB\Server\3.4\bin;C:\Program Files\Microsoft VS Code\bin;C:\Python27;C:\Users\pmwis\AppData\Local\Microsoft\WindowsApps;C:\Program Files (x86)\GnuWin32\bin;C:\Users\pmwis\AppData\Roaming\npm;
@@ -6044,7 +6044,7 @@ Lockfile:
     resolved "https://registry.yarnpkg.com/yallist/-/yallist-3.0.2.tgz#8452b4bb7e83c7c188d8041c1a837c773d6d8bb9"
 
 Trace: 
-  Error: Command "start" not found.
+  Error: Command "storyu" not found. Did you mean "story"?
       at new MessageError (C:\Users\pmwis\AppData\Roaming\npm\node_modules\yarn\lib\cli.js:186:110)
       at C:\Users\pmwis\AppData\Roaming\npm\node_modules\yarn\lib\cli.js:87307:17
       at Generator.next (<anonymous>)
