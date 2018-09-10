@@ -9,6 +9,7 @@ import {
 } from '../types';
 import Form from '../form';
 import Field from '../field';
+import get from 'lodash.get';
 
 const createFormContext = () => React.createContext(initialState);
 
@@ -27,7 +28,7 @@ const createForm = () => {
                         <Field
                             {...consumerProps}
                             {...props}
-                            {...consumerProps.values[props.name]}
+                            {...get(consumerProps, `values.${props.name}`)}
                             register={consumerProps.registerField}
                             name={props.name}
                         />

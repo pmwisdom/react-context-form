@@ -8,6 +8,7 @@ import {
 } from '../types';
 import initialState from '../context/initial-state';
 import {isFunction} from '../util/func';
+import set from '../util/set';
 
 export interface IFieldRegister {
     name: string;
@@ -49,15 +50,12 @@ class Form extends React.Component<IFormProps, IFormState> {
 
         this.setState(
             ({values}) => ({
-                values: {
-                    ...values,
-                    [name]: {
-                        value: initialValue,
-                        initialValue,
-                        touched: false,
-                        validators
-                    }
-                }
+                values: set(values, name, {
+                    value: initialValue,
+                    initialValue,
+                    touched: false,
+                    validators
+                }) as IFormValueObject
             }),
             () => {
                 this.processQueueFields();
@@ -220,19 +218,15 @@ class Form extends React.Component<IFormProps, IFormState> {
         value: any;
         key: string;
         touched?: boolean;
-    }) => {
+    }): IFormValueObject => {
         const current = values[name];
-
         const newValue = {...current, [key]: value};
 
         if (touched) {
             newValue.touched = touched;
         }
 
-        return {
-            ...values,
-            [name]: newValue
-        };
+        return set(values, `${name}`, newValue) as any;
     };
 }
 
