@@ -57,19 +57,31 @@ class Form extends React.Component<IFormProps, IFormState> {
                     validators
                 }) as IFormValueObject
             }),
-            () => {
-                this.processQueueFields();
-            }
+            this.processQueueFields
         );
     };
 
-    public registerField = (values: IFieldRegister) => {
-        this.queue.push(values);
+    public registerField = (field: IFieldRegister) => {
+        // this.queue.push(values);
 
-        if (!this.isProcessingQueue) {
-            this.isProcessingQueue = true;
-            this.processQueueFields();
-        }
+        // if (!this.isProcessingQueue) {
+        //     this.isProcessingQueue = true;
+        //     this.processQueueFields();
+        // }
+
+        const {name, initialValue, validators} = field;
+
+        this.setState(
+            ({values}) => ({
+                values: set(values, name, {
+                    value: initialValue,
+                    initialValue,
+                    touched: false,
+                    validators
+                }) as IFormValueObject
+            }),
+            this.processQueueFields
+        );
     };
 
     public changeFieldValue = (name: string, value: any) => {
