@@ -84,19 +84,15 @@ class Form extends React.Component<IFormProps, IFormState> {
         );
     };
 
-    public changeFieldValue = (name: string, value: any) => {
-        this.setState(
-            ({values}) => ({
-                values: this.setFieldValue({
-                    values,
-                    name,
-                    key: 'value',
-                    value,
-                    touched: true
-                })
-            }),
-            () => this.handleChange()
-        );
+    public changeFieldValue = async (name: string, value: any) => {
+        await this.setFieldValue({
+            name,
+            key: 'value',
+            value,
+            touched: true
+        });
+
+        this.handleChange();
     };
 
     public handleChange = () => {
@@ -114,7 +110,8 @@ class Form extends React.Component<IFormProps, IFormState> {
         const {onSubmit, onSubmitSuccess, onSubmitFailure} = this.props;
         try {
             if (isFunction(onSubmit)) {
-                const hasError = await this.runValidation();
+                const errors = await this.runValidation();
+                const hasError = Boolean(Object.keys(errors).length);
 
                 if (hasError) {
                     throw new Error(
@@ -135,6 +132,10 @@ class Form extends React.Component<IFormProps, IFormState> {
         }
     };
 
+    public handleBlur = () => {
+        this.runValidation();
+    };
+
     public get fieldErrors() {
         const {values} = this.state;
         return Object.keys(values).reduce(
@@ -149,7 +150,6 @@ class Form extends React.Component<IFormProps, IFormState> {
 
     public async runValidation() {
         const {values} = this.state;
-        let hasError = false;
         const updates = [];
 
         for (const key of Object.keys(values)) {
@@ -163,7 +163,6 @@ class Form extends React.Component<IFormProps, IFormState> {
                     fieldError = validator(field.value);
 
                     if (fieldError) {
-                        hasError = true;
                         break;
                     }
                 }
@@ -176,7 +175,7 @@ class Form extends React.Component<IFormProps, IFormState> {
 
         await Promise.all(updates);
 
-        return hasError;
+        return this.fieldErrors;
     }
 
     public updateFieldError = ({
@@ -186,20 +185,78 @@ class Form extends React.Component<IFormProps, IFormState> {
         name: any;
         error: string | undefined;
     }) => {
-        return new Promise(resolve =>
-            this.setState(
-                ({values}) => ({
-                    values: this.setFieldValue({
-                        values,
-                        name,
-                        value: error,
-                        key: 'error',
-                        touched: true
-                    })
-                }),
-                resolve
-            )
-        );
+        return this.setFieldValue({
+            name,
+            value: error,
+            key: 'error',
+            touched: true
+        });
+    };
+
+    public reset = async () => {
+        const updates = [];
+        const {values} = this.state;
+
+        for (const name of Object.keys(values)) {
+            const val = values[name];
+
+            updates.push(
+                this.setFieldValue({
+                    name,
+                    key: 'value',
+                    value: val.initialValue,
+                    touched: false
+                })
+            );
+        }
+
+        await Promise.all(updates);
+    };
+
+    public setFormValues = async (values: {[key: string]: any}) => {
+        const updates = [];
+
+        for (const name of Object.keys(values)) {
+            const value = values[name];
+
+            updates.push(
+                this.setFieldValue({
+                    name,
+                    key: 'value',
+                    value,
+                    touched: false
+                })
+            );
+        }
+
+        await Promise.all(updates);
+    };
+
+    public setFieldValue = ({
+        name,
+        value,
+        key,
+        touched
+    }: {
+        name: string;
+        value: any;
+        key: string;
+        touched?: boolean;
+    }) => {
+        return new Promise(resolve => {
+            this.setState(({values}) => {
+                const current = values[name];
+                const newValue = {...current, [key]: value};
+
+                if (touched) {
+                    newValue.touched = touched;
+                }
+
+                return {
+                    values: set(values, `${name}`, newValue) as any
+                };
+            }, resolve);
+        });
     };
 
     public render() {
@@ -208,7 +265,10 @@ class Form extends React.Component<IFormProps, IFormState> {
         const value: IFormConsumer = {
             ...this.state,
             registerField: this.registerField,
-            changeFieldValue: this.changeFieldValue
+            changeFieldValue: this.changeFieldValue,
+            onBlur: this.handleBlur,
+            reset: this.reset,
+            setFormValues: this.setFormValues
         };
 
         return (
@@ -217,29 +277,6 @@ class Form extends React.Component<IFormProps, IFormState> {
             </Provider>
         );
     }
-
-    private setFieldValue = ({
-        values,
-        name,
-        value,
-        key,
-        touched
-    }: {
-        values: any;
-        name: string;
-        value: any;
-        key: string;
-        touched?: boolean;
-    }): IFormValueObject => {
-        const current = values[name];
-        const newValue = {...current, [key]: value};
-
-        if (touched) {
-            newValue.touched = touched;
-        }
-
-        return set(values, `${name}`, newValue) as any;
-    };
 }
 
 export default Form;

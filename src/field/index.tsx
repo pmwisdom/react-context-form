@@ -3,57 +3,62 @@ import {IFieldInternalProps, IFieldChildrenProps} from '../types';
 import {isFunction} from '../util/func';
 
 class Field extends React.Component<IFieldInternalProps> {
-    static defaultProps = {
-        value: '',
-        initialValue: '',
-        type: 'text',
-        validators: []
-    };
+	static defaultProps = {
+		value: '',
+		initialValue: '',
+		type: 'text',
+		validators: []
+	};
 
-    public componentWillMount() {
-        const {initialValue, name, validators} = this.props;
-        this.props.register({name, initialValue, validators});
-    }
+	public componentWillMount() {
+		const {initialValue, name, validators} = this.props;
+		this.props.register({name, initialValue, validators});
+	}
 
-    public handleChange = (
-        evtOrValue: React.FormEvent<HTMLInputElement> | any
-    ) => {
-        const {changeFieldValue, name} = this.props;
+	public handleChange = (
+		evtOrValue: React.FormEvent<HTMLInputElement> | any
+	) => {
+		const {changeFieldValue, name} = this.props;
 
-        if (evtOrValue.currentTarget) {
-            return changeFieldValue(name, evtOrValue.currentTarget.value);
-        }
+		if (evtOrValue.currentTarget) {
+			return changeFieldValue(name, evtOrValue.currentTarget.value);
+		}
 
-        changeFieldValue(name, evtOrValue);
-    };
+		changeFieldValue(name, evtOrValue);
+	};
 
-    public handleBlur = () => {};
+	public handleBlur = () => {
+		const {onBlur} = this.props;
 
-    public handleFocus = () => {};
+		onBlur();
+	};
 
-    public render() {
-        const {value, error, type, children, touched} = this.props;
+	public handleFocus = () => {};
 
-        if (isFunction(children)) {
-            return children({
-                value,
-                onChange: this.handleChange,
-                error,
-                type,
-                touched
-            });
-        }
+	public render() {
+		const {value, error, type, children, touched} = this.props;
 
-        return (
-            <input
-                value={value}
-                type={type}
-                onChange={this.handleChange}
-                onBlur={this.handleBlur}
-                onFocus={this.handleFocus}
-            />
-        );
-    }
+		if (isFunction(children)) {
+			return children({
+				value,
+				onChange: this.handleChange,
+				onBlur: this.handleBlur,
+				error,
+				type,
+				touched
+			});
+		}
+
+		return (
+			<input
+				value={value}
+				type={type}
+				onChange={this.handleChange}
+				onBlur={this.handleBlur}
+				onFocus={this.handleFocus}
+			/>
+		);
+	}
 }
 
 export default Field;
