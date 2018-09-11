@@ -35,6 +35,14 @@ storiesOf('Single Form', module)
             <button type="submit"> Submit </button>
         </Form>
     ))
+    .add('Many Fields', () => (
+        <Form>
+            {Array.from({length: 200}, (_, i) => {
+                const fieldName = `dupe[${i}]`;
+                return <Field name={fieldName} initialValue={fieldName} />;
+            })}
+        </Form>
+    ))
     .add('Throws Error on duplicate fields', () => (
         <Form>
             <Field name="dupe" />
