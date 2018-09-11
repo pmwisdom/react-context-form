@@ -9,10 +9,8 @@
         "story": "start-storybook -p 3001 -c .storybook"
     },
     "dependencies": {
-        "@types/lodash.curry": "^4.1.4",
         "@types/lodash.get": "^4.4.4",
         "@types/lodash.setwith": "^4.3.4",
-        "lodash.curry": "^4.1.1",
         "lodash.get": "^4.4.2",
         "lodash.setwith": "^4.3.2"
     },
